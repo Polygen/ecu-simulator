@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:preditech_ui_kit/preditech_ui_kit.dart';
+import '../../components/preditech_nav_bar.dart';
 import '../pid_dashboard/pid_dashboard_screen.dart';
 import '../dtc/dtc_screen.dart';
-import '../profiles/profiles_screen.dart';
 import '../connection/connection_screen.dart';
+import '../profiles/profiles_screen.dart';
 import '../settings/settings_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -14,19 +15,19 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  PreditechTab _currentTab = PreditechTab.home;
+  AppTab _currentTab = AppTab.home;
 
   Widget _getScreen() {
     switch (_currentTab) {
-      case PreditechTab.home:
+      case AppTab.home:
         return const PidDashboardScreen();
-      case PreditechTab.dtc:
+      case AppTab.dtc:
         return const DtcScreen();
-      case PreditechTab.connection:
+      case AppTab.connection:
         return const ConnectionScreen();
-      case PreditechTab.garage:
+      case AppTab.garage:
         return const ProfilesScreen();
-      case PreditechTab.settings:
+      case AppTab.settings:
         return const SettingsScreen();
     }
   }
@@ -40,7 +41,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: SafeArea(
         child: _getScreen(),
       ),
-      bottomNavigationBar: PreditechNavBar(
+      bottomNavigationBar: PreditechNavBar5(
         currentTab: _currentTab,
         onTabChanged: (tab) {
           setState(() {
@@ -51,4 +52,3 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 }
-
