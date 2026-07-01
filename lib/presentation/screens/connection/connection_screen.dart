@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:preditech_ui_kit/preditech_ui_kit.dart';
+import '../../../data/services/serial_server.dart';
 import '../../viewmodels/connection_viewmodel.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
@@ -39,7 +40,11 @@ class ConnectionScreen extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         _TypeSelector(
-                          label: Platform.isWindows ? 'COM Port (BT)' : 'Bluetooth',
+                          label: Platform.isWindows
+                              ? 'COM Port (BT)'
+                              : Platform.isLinux
+                                  ? 'Bluetooth (rfcomm)'
+                                  : 'Bluetooth',
                           icon: Icons.bluetooth,
                           isSelected: state.serverType == ServerType.bluetooth,
                           onTap: () => notifier.setServerType(ServerType.bluetooth),
@@ -56,7 +61,7 @@ class ConnectionScreen extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    if (state.serverType == ServerType.bluetooth && Platform.isWindows)
+                    if (state.serverType == ServerType.bluetooth && (Platform.isWindows || Platform.isLinux))
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
@@ -73,7 +78,9 @@ class ConnectionScreen extends ConsumerWidget {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    'Windows\'ta Bluetooth için Sanal COM port kullanın.\n1. Windows Ayarları > Bluetooth > Daha fazla Bluetooth seçeneği\n2. COM Bağlantı Noktaları > Ekle > Gelen (Incoming)\n3. Oluşan COM portunu buradan seçin:',
+                                    Platform.isLinux
+                                        ? 'Linux\'ta Bluetooth SPP için rfcomm kullanılır.\n1. bluez-deprecated-tools kurun: sudo pacman -S bluez-deprecated-tools\n2. Ayrı terminalde dinleyici başlatın: sudo rfcomm listen /dev/rfcomm0 1\n3. Oluşan /dev/rfcommX portunu aşağıdan seçin:'
+                                        : 'Windows\'ta Bluetooth için Sanal COM port kullanın.\n1. Windows Ayarları > Bluetooth > Daha fazla Bluetooth seçeneği\n2. COM Bağlantı Noktaları > Ekle > Gelen (Incoming)\n3. Oluşan COM portunu buradan seçin:',
                                     style: TextStyle(color: semantics.statusWarning, fontSize: 12),
                                   ),
                                 ),
@@ -89,7 +96,10 @@ class ConnectionScreen extends ConsumerWidget {
                               ),
                               dropdownColor: semantics.background,
                               value: state.selectedComPort,
-                              items: ['COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9']
+                              items: SerialServer.availablePorts
+                                  .where((port) => Platform.isWindows
+                                      ? port.startsWith('COM')
+                                      : port.startsWith('/dev/rfcomm'))
                                   .map((port) => DropdownMenuItem(
                                         value: port,
                                         child: Text(port, style: TextStyle(color: semantics.textPrimary)),

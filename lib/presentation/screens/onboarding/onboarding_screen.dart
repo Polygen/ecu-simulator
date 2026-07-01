@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:preditech_ui_kit/preditech_ui_kit.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -72,13 +73,15 @@ class OnboardingScreen extends StatelessWidget {
               PrimaryButton(
                 label: 'Anladım, Simülatöre Geç',
                 onPressed: () async {
-                  await [
-                    Permission.bluetooth,
-                    Permission.bluetoothConnect,
-                    Permission.bluetoothScan,
-                    Permission.bluetoothAdvertise,
-                    Permission.location,
-                  ].request();
+                  if (!Platform.isLinux) {
+                    await [
+                      Permission.bluetooth,
+                      Permission.bluetoothConnect,
+                      Permission.bluetoothScan,
+                      Permission.bluetoothAdvertise,
+                      Permission.location,
+                    ].request();
+                  }
 
                   if (context.mounted) {
                     Navigator.of(context).pushReplacement(

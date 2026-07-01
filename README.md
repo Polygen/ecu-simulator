@@ -6,7 +6,7 @@
   <p>
     <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Made%20with-Flutter-02569B.svg?style=flat-square&logo=Flutter" alt="Made with Flutter" /></a>
     <a href="https://dart.dev"><img src="https://img.shields.io/badge/Language-Dart-0175C2.svg?style=flat-square&logo=dart" alt="Language Dart" /></a>
-    <img src="https://img.shields.io/badge/Platform-Android%20%7C%20Windows-brightgreen.svg?style=flat-square" alt="Platforms" />
+    <img src="https://img.shields.io/badge/Platform-Android%20%7C%20Windows%20%7C%20Linux-brightgreen.svg?style=flat-square" alt="Platforms" />
   </p>
 </div>
 
@@ -83,6 +83,82 @@ To test Bluetooth on Windows, you must bridge a virtual COM port:
 3. Click **Add** and select **Incoming (Gelen)**.
 4. Windows will assign a COM Port (e.g., `COM4`).
 5. Open the Preditech Simulator, select "COM Port (BT)", pick `COM4`, and hit Start!
+
+### 4. Running on Linux
+
+Linux uses BlueZ's `rfcomm` tool to bridge Bluetooth SPP into a virtual serial port that the existing `SerialServer` reads from. **No new native code** — `flutter_libserialport` already enumerates `/dev/rfcomm*` devices.
+
+#### 🐧 Linux Bluetooth Setup Guide (Arch / Manjaro / CachyOS)
+
+**1. Install Bluetooth packages:**
+
+BlueZ 5.65+ removed `rfcomm` and `sdptool` from the main `bluez-utils` package. Install the deprecated tools to get them back:
+
+```bash
+sudo pacman -S bluez bluez-utils bluez-deprecated-tools
+sudo systemctl enable --now bluetooth.service
+```
+
+**2. Pair the phone with the computer (once):**
+
+```bash
+bluetoothctl
+# Inside the bluetoothctl shell:
+power on
+scan on
+# Wait for your phone's MAC to appear, then:
+pair AA:BB:CC:DD:EE:FF
+trust AA:BB:CC:DD:EE:FF
+exit
+```
+
+**3. Register the SPP service (only needed on some setups):**
+
+```bash
+sudo sdptool add SP
+```
+
+**4. Start the rfcomm listener in a separate terminal:**
+
+```bash
+sudo rfcomm listen /dev/rfcomm0 1
+```
+
+You should see: `Waiting for connection on channel 1`. Leave this terminal open.
+
+**5. (Optional but recommended) udev rule for persistent permissions:**
+
+Without this rule, only `root` can read/write `/dev/rfcomm0` and you'd need `sudo` for the app (which is not advised for a desktop app).
+
+Create `/etc/udev/rules.d/99-rfcomm.rules`:
+
+```
+KERNEL=="rfcomm[0-9]*", TAG+="uaccess"
+```
+
+Then reload rules:
+
+```bash
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+**6. Run the app:**
+
+```bash
+flutter run -d linux
+```
+
+Inside the app: pick **"Bluetooth (rfcomm)"**, select `/dev/rfcomm0` from the dropdown, hit **"Sunucuyu Başlat"**.
+
+> 💡 **Tip:** Each rfcomm channel is single-client. If you need multiple simultaneous clients, run multiple `rfcomm listen` calls on different numbers (`/dev/rfcomm0`, `/dev/rfcomm1`, ...).
+
+#### 🔌 End-to-End Test
+
+1. From your phone, pair and connect to the computer via Bluetooth (use Car Scanner, Torque, OBD Auto Doctor, or any ELM327 client).
+2. The rfcomm terminal should print `Connected /dev/rfcomm0 to ...`.
+3. The app's log panel will start showing `Rx: ...` and `Tx: ...` lines.
+4. Send `ATZ`, `ATE0`, `ATSP0` from the client — expect `ELM327 ...`, `OK`, `OK`.
+5. Send `010C` (RPM) and `010D` (Speed) — expect `41 0C XX XX` and `41 0D XX` based on the simulator's current slider values.
 
 ---
 

@@ -118,10 +118,34 @@ class ConnectionViewModel extends StateNotifier<ConnectionState> {
     state = state.copyWith(logs: newLogs);
   }
 
+  /// Linux'ta Bluetooth rfcomm portunun hazır olup olmadığını kontrol eder ve
+  /// gerekirse kullanıcıya rehberlik eden uyarılar loglar.
+  ///
+  /// Bu metod, kullanıcı `/dev/rfcomm0` benzeri bir port seçip
+  /// "Sunucuyu Başlat"a bastığında ÇAĞRILIR — `_serialServer.startServer()`
+  /// çağrılmadan hemen önce.  Amaç: rfcomm dinleyicisi kurulmadan
+  /// (yani `sudo rfcomm listen /dev/rfcomm0 1` çalıştırılmadan) sunucu
+  /// başlatılırsa kullanıcı hangi adımı kaçırdığını anlasın.
+  Future<void> _validateRfcommPort(String? port) async {
+    if (!Platform.isLinux || port == null || !port.startsWith('/dev/')) return;
+    final device = File(port);
+    if (!device.existsSync()) {
+      addLog('Uyarı: $port bulunamadı.');
+      addLog('Ayrı bir terminalde şu komutu çalıştırın:');
+      addLog('  sudo rfcomm listen /dev/rfcomm0 1');
+      return;
+    }
+    if ((device.statSync().mode & 0x92) == 0) {
+      addLog('Uyarı: $port yazma izni yok.');
+      addLog('Geçici: sudo chmod 666 $port');
+      addLog('Kalıcı: /etc/udev/rules.d/99-rfcomm.rules -> KERNEL=="rfcomm[0-9]*", TAG+="uaccess"');
+    }
+  }
+
   Future<void> toggleServer() async {
     if (state.isRunning) {
       if (state.serverType == ServerType.bluetooth) {
-        if (Platform.isWindows) {
+        if (Platform.isWindows || Platform.isLinux) {
           _serialServer.stopServer();
         } else {
           await _btServer.stopServer();
@@ -134,10 +158,13 @@ class ConnectionViewModel extends StateNotifier<ConnectionState> {
     } else {
       bool success = false;
       if (state.serverType == ServerType.bluetooth) {
-        if (Platform.isWindows) {
+        if (Platform.isWindows || Platform.isLinux) {
            if (state.selectedComPort == null) {
-              addLog("Hata: Lütfen bir COM portu seçin.");
+              addLog("Hata: Lütfen bir port seçin.");
               return;
+           }
+           if (Platform.isLinux) {
+             await _validateRfcommPort(state.selectedComPort);
            }
            addLog("COM Port (${state.selectedComPort}) Sunucusu başlatılıyor...");
            success = await _serialServer.startServer(state.selectedComPort!);
