@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="app icon (2).png" alt="Preditech ECU Simulator Logo" width="150" />
+  <img src="assets/images/app_icon.png" alt="Preditech ECU Simulator Logo" width="150" />
   <h1>Preditech ECU Simulator</h1>
   <p><strong>Advanced ELM327 / OBD-II Hardware Simulator for Mobile & Desktop</strong></p>
 
