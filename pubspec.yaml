@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.12.2
+  sdk: ^3.10.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -32,7 +32,10 @@ dependencies:
     sdk: flutter
 
   preditech_ui_kit:
-    path: ../preditech-ui-kit/packages/preditech_ui_kit
+    git:
+      url: https://github.com/Polygen/preditech-ui-kit.git
+      ref: main
+      path: packages/preditech_ui_kit
   flutter_riverpod: ^2.5.1
   drift: ^2.18.0
   drift_flutter: ^0.2.2
